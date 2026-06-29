@@ -14,7 +14,7 @@ class Expr(ABC):
         ...
 
     @abstractmethod
-    def eval(self, t: float) -> float:
+    def eval(self, point: float, var) -> float:
         ...
     
     @abstractmethod
