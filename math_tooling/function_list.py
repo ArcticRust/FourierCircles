@@ -54,9 +54,9 @@ class Multiply(Expr):
                 output += " * "
             
             takes_precedence = (val.precedence < self.precedence)
-            if takes_precedence: output += "("
+            if takes_precedence: output += TextColors.set_color("(", TextColors.CYAN)
             output += str(val)
-            if takes_precedence: output += ")"
+            if takes_precedence: output += TextColors.set_color(")", TextColors.CYAN)
 
         return output
 
@@ -148,14 +148,14 @@ class Divide(Binary):
         p2 = self.sub_nodes[1].precedence
 
         output = ""
-        if p1 <= self.precedence: output += "("
+        if p1 <= self.precedence: output += TextColors.set_color("(", TextColors.BLUE)
         output += str(self.sub_nodes[0])
-        if p1 <= self.precedence: output += ")"
+        if p1 <= self.precedence: output += TextColors.set_color(")", TextColors.BLUE)
         output += " / "
 
-        if p2 <= self.precedence: output += "("
+        if p2 <= self.precedence: output += TextColors.set_color("(", TextColors.BLUE)
         output += str(self.sub_nodes[1])
-        if p2 <= self.precedence: output += ")"
+        if p2 <= self.precedence: output += TextColors.set_color(")", TextColors.BLUE)
         return output
 
 class Cos(Unary):
@@ -173,7 +173,7 @@ class Cos(Unary):
         return Multiply(self.sub_nodes[0].diff(), Sin(self.sub_nodes[0]), Const(-1))
 
     def __str__(self):
-        return "cos(" + str(self.sub_nodes[0]) + ")"
+        return TextColors.set_color("cos(", TextColors.MAGENTA) + str(self.sub_nodes[0]) + TextColors.set_color(")", TextColors.MAGENTA)
 
 class Sin(Unary):
     def eval(self, t):
@@ -190,7 +190,7 @@ class Sin(Unary):
         return Sin(self.sub_nodes[0])
 
     def __str__(self):
-        return "sin(" + str(self.sub_nodes[0]) + ")"
+        return TextColors.set_color("sin(", TextColors.MAGENTA) + str(self.sub_nodes[0]) + TextColors.set_color(")", TextColors.MAGENTA)
 
 class Ln(Unary):
     def eval(self, t):
@@ -207,7 +207,7 @@ class Ln(Unary):
         return Ln(self.sub_nodes[0])
 
     def __str__(self):
-        return "ln(" + str(self.sub_nodes[0]) + ")"
+        return TextColors.set_color("ln(", TextColors.MAGENTA) + str(self.sub_nodes[0]) + TextColors.set_color(")", TextColors.MAGENTA)
 
 class Pow(Binary):
     precedence = 3
@@ -237,14 +237,14 @@ class Pow(Binary):
         p2 = self.sub_nodes[1].precedence
 
         output = ""
-        if p1 <= self.precedence: output += "("
+        if p1 <= self.precedence: output += TextColors.set_color("(", TextColors.RED)
         output += str(self.sub_nodes[0])
-        if p1 <= self.precedence: output += ")"
+        if p1 <= self.precedence: output += TextColors.set_color(")", TextColors.RED)
         output += "^"
 
-        if p2 <= self.precedence: output += "("
+        if p2 <= self.precedence: output += TextColors.set_color("(", TextColors.RED)
         output += str(self.sub_nodes[1])
-        if p2 <= self.precedence: output += ")"
+        if p2 <= self.precedence: output += TextColors.set_color(")", TextColors.RED)
         return output
 
 class Tan(Unary):
@@ -262,7 +262,7 @@ class Tan(Unary):
         return Tan(self.sub_nodes[0])
 
     def __str__(self):
-        return "tan(" + str(self.sub_nodes[0]) + ")"
+        return TextColors.set_color("tan(", TextColors.MAGENTA) + str(self.sub_nodes[0]) + TextColors.set_color(")", TextColors.MAGENTA)
 
 class Abs(Unary):
     def eval(self, t):
@@ -280,7 +280,7 @@ class Abs(Unary):
         return Abs(self.sub_nodes[0])
 
     def __str__(self):
-        return "|" + str(self.sub_nodes[0]) + "|"
+        return TextColors.set_color("|", TextColors.MAGENTA) + str(self.sub_nodes[0]) + TextColors.set_color("|", TextColors.MAGENTA)
     
 class Const(Unary):
     def eval(self, t):
@@ -390,3 +390,18 @@ def find_fourier_function(n: int, func: Expr, domain: list[float]=[0, 1]) -> Exp
         terms.append(Multiply(Const(coef), Pow(Const(math.e), exponent)))
         
     return Add(*terms)
+
+
+class TextColors:
+    @staticmethod
+    def set_color(self, input: str, color: str):
+        return color + input + self.RESET
+
+    RED = "\x1b[31m"
+    GREEN = "\x1b[32m"
+    YELLOW = "\x1b[33m"
+    BLUE = "\x1b[34m"
+    MAGENTA = "\x1b[35m"
+    CYAN = "\x1b[36m"
+    WHITE = "\x1b[37m"
+    RESET = "\x1b[0m"
