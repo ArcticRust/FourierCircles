@@ -369,20 +369,21 @@ def integrate(lower_bound: float, upper_bound: float, expr: Expr, step_size: flo
         curr_point += step_size
     return result
 
-def find_fourier_coefficient(n: int, func: Expr, L: float = 1) -> float:
+def find_fourier_coefficient(n: int, func: Expr, domain: list[float]=[0, 1]) -> float:
+    L = domain[1] - domain[0]
     fourier_expression = Multiply(Const(1 / L), func, Pow(Const(math.e), Multiply(Const(-2 * math.pi * 1j * n / L), Var())))
-    return integrate(0, L, fourier_expression)
+    return integrate(domain[0], domain[1], fourier_expression)
 
 
-def find_fourier_function(n: int, func: Expr, L: float) -> Expr:
-    coefficient_list = [find_fourier_coefficient(0, func, L)]
+def find_fourier_function(n: int, func: Expr, domain: list[float]=[0, 1]) -> Expr:
+    assert len(domain) == 2 and domain[1] > domain[0]
+    L = domain[1] - domain[0]
+    coefficient_list = [find_fourier_coefficient(0, func, domain)]
     for i in range(1, n + 1):
-        coefficient_list.insert(0, find_fourier_coefficient(-i, func, L))
-        coefficient_list.append(find_fourier_coefficient(i, func, L))
+        coefficient_list.insert(0, find_fourier_coefficient(-i, func, domain))
+        coefficient_list.append(find_fourier_coefficient(i, func, domain))
 
     terms = []
-    # idx goes from 0 to 2n
-    # k will correctly map from -n to n
     for idx, coef in enumerate(coefficient_list):
         k = idx - n 
         exponent = Multiply(Const(2j * math.pi * k / L), Var())

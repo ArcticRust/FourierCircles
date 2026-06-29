@@ -9,20 +9,20 @@ BLACK = (0, 0, 0)
 pygame.init()
 
 class GraphBuilder:
-    def __init__(self):
+    def __init__(self, screen_width=1280, screen_height=720, x_scale=1, y_scale=1, num_x_markers=10):
         self.axis_width = 2
-        self.width = 1280
-        self.height = 720
+        self.width = screen_width
+        self.height = screen_height
         self.center = (self.width / 2, self.height / 2)
         self.screen = pygame.display.set_mode((self.width, self.height))
         self.screen.fill("white")
-        self.num_x_markers = 10 # in each direction
+        self.num_x_markers = num_x_markers # in each direction
         px_width_of_x_marker = self.width / (2 * self.num_x_markers)
         self.num_y_markers = self.height / px_width_of_x_marker / 2
         self.marker_width = 2
         self.marker_height = 20
-        self.x_scale = 1
-        self.y_scale = 1
+        self.x_scale = x_scale
+        self.y_scale = y_scale
 
         self.draw_axis()
         # TODO: add dt shenanigans later, only doing plotting now
