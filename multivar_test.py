@@ -4,5 +4,6 @@ t = Var("t")
 x = Var("x")
 y = Var("y")
 
-f = Multiply(Sin(x), Cos(t), Pow(Cos(x), y))
+f = Sin(Multiply(x, t, Sin(Multiply(x, t))))
+
 print(f.diff(x).simplify())

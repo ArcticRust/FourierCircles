@@ -10,11 +10,11 @@ class Expr(ABC):
         ...
 
     @abstractmethod
-    def diff(self) -> Expr:
+    def diff(self, var) -> Expr:
         ...
 
     @abstractmethod
-    def eval(self, point: float, var) -> float:
+    def eval(self, var_dict) -> float:
         ...
     
     @abstractmethod
@@ -24,6 +24,14 @@ class Expr(ABC):
     @abstractmethod
     def __str__(self):
         ...
+
+    def get_var_dependencies(self) -> set[Expr]:
+        if len(self.sub_nodes) == 0:
+            return set()
+        dependencies = self.sub_nodes[0].get_var_dependencies()
+        for i in range(1, len(self.sub_nodes)):
+            dependencies.update(self.sub_nodes[i].get_var_dependencies())
+        return dependencies
 
     def __init__(self, *args: Expr):
         self.sub_nodes = list(args)

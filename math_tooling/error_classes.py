@@ -1,0 +1,2 @@
+class ValUndefinedError(Exception):
+    pass

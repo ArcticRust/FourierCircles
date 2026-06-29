@@ -4,14 +4,15 @@ from abc import ABC, abstractmethod
 import math 
 from .expr_types import *
 from copy import deepcopy
+from .error_classes import *
 
 class Multiply(Expr):
     precedence = 2
 
-    def eval(self, point: float, var: Var):
+    def eval(self, var_dict: dict[Var, float]):
         total = 1
         for sub_expr in self.sub_nodes:
-            total *= sub_expr.eval(point, var)
+            total *= sub_expr.eval(var_dict)
         return total
 
     def diff(self, var: Var):
@@ -63,10 +64,10 @@ class Multiply(Expr):
 class Add(Expr):
     precedence = 1
 
-    def eval(self, point: float, var: Var):
+    def eval(self, var_dict: dict[Var, float]):
         total = 0
         for sub_expr in self.sub_nodes:
-            total += sub_expr.eval(point, var)
+            total += sub_expr.eval(var_dict)
         return total
 
     def diff(self, var: Var):
@@ -104,8 +105,8 @@ class Add(Expr):
 class Subtract(Binary):
     precedence = 1
 
-    def eval(self, point: float, var: Var):
-        return self.sub_nodes[0].eval(point, var) - self.sub_nodes[1].eval(point, var)
+    def eval(self, var_dict: dict[Var, float]):
+        return self.sub_nodes[0].eval(var_dict) - self.sub_nodes[1].eval(var_dict)
 
     def diff(self, var: Var):
         return Subtract(self.sub_nodes[0].diff(var), self.sub_nodes[1].diff(var))
@@ -124,11 +125,11 @@ class Subtract(Binary):
 class Divide(Binary):
     precedence = 2
 
-    def eval(self, point: float, var: Var):
-        denominator = self.sub_nodes[1].eval(point, var)
+    def eval(self, var_dict: dict[Var, float]):
+        denominator = self.sub_nodes[1].eval(var_dict)
         if abs(denominator) == 0:
             raise ZeroDivisionError("YOU FOOL!!! YOU HAVE DIVIDED BY ZEERRROOOOOOO")
-        return self.sub_nodes[0].eval(point, var) / denominator
+        return self.sub_nodes[0].eval(var_dict) / denominator
 
     def diff(self, var: Var):
         f = self.sub_nodes[0]
@@ -159,8 +160,8 @@ class Divide(Binary):
         return output
 
 class Cos(Unary):
-    def eval(self, point: float, var: Var):
-        return math.cos(self.sub_nodes[0].eval(point, var))
+    def eval(self, var_dict: dict[Var, float]):
+        return math.cos(self.sub_nodes[0].eval(var_dict))
     
     def simplify(self):
         self.sub_nodes[0] = self.sub_nodes[0].simplify()
@@ -176,8 +177,8 @@ class Cos(Unary):
         return "cos(" + str(self.sub_nodes[0]) + ")"
 
 class Sin(Unary):
-    def eval(self, point: float, var: Var):
-        return math.sin(self.sub_nodes[0].eval(point, var))
+    def eval(self, var_dict: dict[Var, float]):
+        return math.sin(self.sub_nodes[0].eval(var_dict))
     
     def diff(self, var: Var):
         return Multiply(self.sub_nodes[0].diff(var), Cos(self.sub_nodes[0]))
@@ -193,8 +194,8 @@ class Sin(Unary):
         return "sin(" + str(self.sub_nodes[0]) + ")"
 
 class Ln(Unary):
-    def eval(self, point: float, var: Var):
-        return math.log(self.sub_nodes[0].eval(point, var))
+    def eval(self, var_dict: dict[Var, float]):
+        return math.log(self.sub_nodes[0].eval(var_dict))
     
     def diff(self, var: Var):
         return Divide(self.sub_nodes[0].diff(var), self.sub_nodes[0])
@@ -211,8 +212,8 @@ class Ln(Unary):
 
 class Pow(Binary):
     precedence = 3
-    def eval(self, point: float, var: Var):
-        return self.sub_nodes[0].eval(point, var) ** self.sub_nodes[1].eval(point, var)
+    def eval(self, var_dict: dict[Var, float]):
+        return self.sub_nodes[0].eval(var_dict) ** self.sub_nodes[1].eval(var_dict)
     
     def diff(self, var: Var):
         f = self.sub_nodes[0]
@@ -248,8 +249,8 @@ class Pow(Binary):
         return output
 
 class Tan(Unary):
-    def eval(self, point: float, var: Var):
-        return math.tan(self.sub_nodes[0].eval(point, var))
+    def eval(self, var_dict: dict[Var, float]):
+        return math.tan(self.sub_nodes[0].eval(var_dict))
     
     def diff(self, var: Var):
         return Multiply(self.sub_nodes[0].diff(var), Divide(Const(1), Pow(Cos(self.sub_nodes[0]), Const(2))))
@@ -265,8 +266,8 @@ class Tan(Unary):
         return "tan(" + str(self.sub_nodes[0]) + ")"
 
 class Abs(Unary):
-    def eval(self, point: float, var: Var):
-        return abs(self.sub_nodes[0].eval(point, var))
+    def eval(self, var_dict: dict[Var, float]):
+        return abs(self.sub_nodes[0].eval(var_dict))
     
     def diff(self, var: Var):
         f = self.sub_nodes[0]
@@ -283,7 +284,7 @@ class Abs(Unary):
         return "|" + str(self.sub_nodes[0]) + "|"
     
 class Const(Unary):
-    def eval(self, point: float, var: Var):
+    def eval(self, var_dict: dict[Var, float]):
         return self.sub_nodes[0]
     
     def diff(self, var: Var):
@@ -302,8 +303,10 @@ class Const(Unary):
 class Var(Unary):
     precedence = 4
 
-    def eval(self, point: float, var: Var):
-        return t
+    def eval(self, var_dict: dict[Var, float]):
+        if self not in var_dict:
+            raise ValUndefinedError("Variable not provided in dictionary")
+        return var_dict.get(self)
     
     def diff(self, var: Var):
         if var.var_name == self.var_name:
@@ -321,10 +324,19 @@ class Var(Unary):
 
     def __str__(self):
         return self.var_name
+    
+    def __eq__(self, value: Var):
+        return self.var_name == value.var_name
+
+    def __hash__(self):
+        return hash(self.var_name)
+
+    def get_var_dependencies(self):
+        return {self}
 
 class Re(Unary):
-    def eval(self, point: float, var: Var):
-        return self.sub_nodes[0].eval(point, var).real
+    def eval(self, var_dict: dict[Var, float]):
+        return self.sub_nodes[0].eval(var_dict).real
 
     def diff(self, var: Var):
         ...
@@ -336,8 +348,8 @@ class Re(Unary):
         return "Re(" + str(self.sub_nodes[0]) + ")"
 
 class Im(Unary):
-    def eval(self, point: float, var: Var):
-        return self.sub_nodes[0].eval(point, var).imag
+    def eval(self, var_dict: dict[Var, float]):
+        return self.sub_nodes[0].eval(var_dict).imag
 
     def diff(self, var: Var):
         ...
@@ -349,8 +361,8 @@ class Im(Unary):
         return "Im(" + str(self.sub_nodes[0]) + ")"
 
 class Step(Unary):
-    def eval(self, point: float, var: Var):
-        val = self.sub_nodes[0].eval(point, var)
+    def eval(self, var_dict: dict[Var, float]):
+        val = self.sub_nodes[0].eval(var_dict)
         if val >= 0: return 1
         return 0
 
@@ -377,24 +389,5 @@ def integrate(lower_bound: float, upper_bound: float, expr: Expr, var: Var, step
         curr_point += step_size
     return result
 
-def find_fourier_coefficient(n: int, func: Expr, domain: list[float]=[0, 1]) -> float:
-    L = domain[1] - domain[0]
-    fourier_expression = Multiply(Const(1 / L), func, Pow(Const(math.e), Multiply(Const(-2 * math.pi * 1j * n / L), Var())))
-    return integrate(domain[0], domain[1], fourier_expression)
-
-
-def find_fourier_function(n: int, func: Expr, domain: list[float]=[0, 1]) -> Expr:
-    assert len(domain) == 2 and domain[1] > domain[0]
-    L = domain[1] - domain[0]
-    coefficient_list = [find_fourier_coefficient(0, func, domain)]
-    for i in range(1, n + 1):
-        coefficient_list.insert(0, find_fourier_coefficient(-i, func, domain))
-        coefficient_list.append(find_fourier_coefficient(i, func, domain))
-
-    terms = []
-    for idx, coef in enumerate(coefficient_list):
-        k = idx - n 
-        exponent = Multiply(Const(2j * math.pi * k / L), Var())
-        terms.append(Multiply(Const(coef), Pow(Const(math.e), exponent)))
-        
-    return Add(*terms)
+"""
+"""
