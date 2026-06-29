@@ -360,7 +360,7 @@ class Step(Unary):
     def __str__(self):
         return "step(" + str(self.sub_nodes[0]) + ")"
 
-def integrate(lower_bound: float, upper_bound: float, expr: Expr, step_size: float = .0001):
+def integrate(lower_bound: float, upper_bound: float, expr: Expr, step_size: float = .001):
     assert lower_bound < upper_bound
     curr_point = lower_bound
     result = 0
@@ -369,25 +369,23 @@ def integrate(lower_bound: float, upper_bound: float, expr: Expr, step_size: flo
         curr_point += step_size
     return result
 
-def find_fourier_coefficient(n: int, func: Expr) -> float:
-    fourier_expression = Multiply(Pow(Const(math.e), Multiply(Const(-n * math.pi * 2j), Var())), func)
-    return integrate(0, 1, fourier_expression)
+def find_fourier_coefficient(n: int, func: Expr, L: float = 1) -> float:
+    fourier_expression = Multiply(Const(1 / L), func, Pow(Const(math.e), Multiply(Const(-2 * math.pi * 1j * n / L), Var())))
+    return integrate(0, L, fourier_expression)
 
 
-def find_fourier_function(n: int, func: Expr) -> Expr:
-    coefficient_list = [find_fourier_coefficient(0, func)]
+def find_fourier_function(n: int, func: Expr, L: float) -> Expr:
+    coefficient_list = [find_fourier_coefficient(0, func, L)]
     for i in range(1, n + 1):
-        coefficient_list.insert(0, find_fourier_coefficient(-i, func))
-        coefficient_list.append(find_fourier_coefficient(i, func))
-    
-    print(coefficient_list)
-    
+        coefficient_list.insert(0, find_fourier_coefficient(-i, func, L))
+        coefficient_list.append(find_fourier_coefficient(i, func, L))
+
     terms = []
     # idx goes from 0 to 2n
     # k will correctly map from -n to n
     for idx, coef in enumerate(coefficient_list):
         k = idx - n 
-        exponent = Multiply(Const(2j * math.pi * k), Var())
+        exponent = Multiply(Const(2j * math.pi * k / L), Var())
         terms.append(Multiply(Const(coef), Pow(Const(math.e), exponent)))
         
     return Add(*terms)

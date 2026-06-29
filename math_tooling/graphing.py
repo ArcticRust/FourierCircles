@@ -1,3 +1,5 @@
+# i hate graphing >:(
+
 import pygame
 from .function_list import *
 import time
