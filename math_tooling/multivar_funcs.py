@@ -7,6 +7,14 @@ from copy import deepcopy
 from .error_classes import *
 
 class Multiply(Expr):
+    """
+    Multiplies any number of expressions
+
+    Parameters
+    ----------
+    *args : Expr
+        Any number of sub-expressions to multiply
+    """
     precedence = 2
 
     def eval(self, var_dict: dict[Var, float]):
@@ -62,6 +70,14 @@ class Multiply(Expr):
         return output
 
 class Add(Expr):
+    """
+    Adds any number of expressions
+
+    Parameters
+    ----------
+    *args : Expr
+        Any number of sub-expressions to add
+    """
     precedence = 1
 
     def eval(self, var_dict: dict[Var, float]):
@@ -103,6 +119,16 @@ class Add(Expr):
         return output
 
 class Subtract(Binary):
+    """
+    Subtracts one expression from another
+
+    Parameters
+    ----------
+    base_expr : Expr
+        Expression to be subtracted from
+    subtracted_expr : Expr
+        Expression to be subtracted
+    """
     precedence = 1
 
     def eval(self, var_dict: dict[Var, float]):
@@ -121,8 +147,21 @@ class Subtract(Binary):
 
     def __str__(self):
         return str(self.sub_nodes[0]) + " - " + str(self.sub_nodes[1])
+
+    def __init__(self, base_expr: Expr, subtracted_expr: Expr):
+        super().__init__(base_expr, subtracted_expr)
     
 class Divide(Binary):
+    """
+    Divides one expression by another
+
+    Parameters
+    ----------
+    numerator : Expr
+        Numerator in division
+    denominator : Expr
+        Denominator in division
+    """
     precedence = 2
 
     def eval(self, var_dict: dict[Var, float]):
@@ -159,7 +198,18 @@ class Divide(Binary):
         if p2 <= self.precedence: output += ")"
         return output
 
+    def __init__(self, numerator: Expr, denominator: Expr):
+        super().__init__(numerator, denominator)
+
 class Cos(Unary):
+    """
+    Takes cosine of argument
+
+    Parameters
+    ----------
+    argument : Expr
+        Expression to take cosine of
+    """
     def eval(self, var_dict: dict[Var, float]):
         return math.cos(self.sub_nodes[0].eval(var_dict))
     
@@ -177,6 +227,14 @@ class Cos(Unary):
         return "cos(" + str(self.sub_nodes[0]) + ")"
 
 class Sin(Unary):
+    """
+    Takes sine of argument
+
+    Parameters
+    ----------
+    argument : Expr
+        Expression to take sine of
+    """
     def eval(self, var_dict: dict[Var, float]):
         return math.sin(self.sub_nodes[0].eval(var_dict))
     
@@ -194,6 +252,14 @@ class Sin(Unary):
         return "sin(" + str(self.sub_nodes[0]) + ")"
 
 class Ln(Unary):
+    """
+    Takes natural logarithm of argument
+
+    Parameters
+    ----------
+    argument : Expr
+        Expression to take the natural logarithm of of
+    """
     def eval(self, var_dict: dict[Var, float]):
         return math.log(self.sub_nodes[0].eval(var_dict))
     
@@ -211,6 +277,17 @@ class Ln(Unary):
         return "ln(" + str(self.sub_nodes[0]) + ")"
 
 class Pow(Binary):
+    """
+    Puts a base expression to the power of another expression
+
+    Parameters
+    ----------
+    base : Expr
+        Base of exponent
+    
+    power : Expr
+        Power to put base to
+    """
     precedence = 3
     def eval(self, var_dict: dict[Var, float]):
         return self.sub_nodes[0].eval(var_dict) ** self.sub_nodes[1].eval(var_dict)
@@ -249,6 +326,14 @@ class Pow(Binary):
         return output
 
 class Tan(Unary):
+    """
+    Takes tangent of argument
+
+    Parameters
+    ----------
+    argument : Expr
+        Expression to take tangent of
+    """
     def eval(self, var_dict: dict[Var, float]):
         return math.tan(self.sub_nodes[0].eval(var_dict))
     
@@ -266,6 +351,14 @@ class Tan(Unary):
         return "tan(" + str(self.sub_nodes[0]) + ")"
 
 class Abs(Unary):
+    """
+    Takes absolute value of argument
+
+    Parameters
+    ----------
+    argument : Expr
+        Expression to take the absolute value of
+    """
     def eval(self, var_dict: dict[Var, float]):
         return abs(self.sub_nodes[0].eval(var_dict))
     
@@ -284,6 +377,14 @@ class Abs(Unary):
         return "|" + str(self.sub_nodes[0]) + "|"
     
 class Const(Unary):
+    """
+    A constant
+
+    Parameters
+    ----------
+    value : float
+        Value of constant
+    """
     def eval(self, var_dict: dict[Var, float]):
         return self.sub_nodes[0]
     
@@ -296,11 +397,20 @@ class Const(Unary):
     def __str__(self):
         return str(self.sub_nodes[0])
     
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.value = self.sub_nodes[0]
+    def __init__(self, value: float):
+        super().__init__(value)
+        self.value = value
 
 class Var(Unary):
+    """
+    A variable. Variables are classified as different based on the string as input.
+    It is recommended that you use the convention var_name = Var("var_name") when defining variables.
+
+    Parameters
+    ----------
+    var_name : str
+        Name of variable being used (Ex: "x", "y", "t")
+    """
     precedence = 4
 
     def eval(self, var_dict: dict[Var, float]):
@@ -335,11 +445,20 @@ class Var(Unary):
         return {self}
 
 class Re(Unary):
+    """
+    Takes the real part of a complex expression
+
+    Parameters
+    ----------
+    argument : Expr
+        Expression to take real part of
+    """
+
     def eval(self, var_dict: dict[Var, float]):
         return self.sub_nodes[0].eval(var_dict).real
 
     def diff(self, var: Var):
-        ...
+        return Re(self.sub_nodes[0].diff())
 
     def simplify(self):
         return Re(self.sub_nodes[0].simplify())
@@ -348,11 +467,20 @@ class Re(Unary):
         return "Re(" + str(self.sub_nodes[0]) + ")"
 
 class Im(Unary):
+    """
+    Takes the real part of a complex expression
+
+    Parameters
+    ----------
+    argument : Expr
+        Expression to take imaginary part of
+    """
+
     def eval(self, var_dict: dict[Var, float]):
         return self.sub_nodes[0].eval(var_dict).imag
 
     def diff(self, var: Var):
-        ...
+        return Im(self.sub_nodes[0].diff())
 
     def simplify(self):
         return Im(self.sub_nodes[0].simplify())
@@ -361,6 +489,14 @@ class Im(Unary):
         return "Im(" + str(self.sub_nodes[0]) + ")"
 
 class Step(Unary):
+    """
+    Step function around zero. Returns 1 for inputs greater than or equal to zero, returns 0 otherwise.
+
+    Parameters
+    ----------
+    argument : Expr
+        Expression to take step function of
+    """
     def eval(self, var_dict: dict[Var, float]):
         val = self.sub_nodes[0].eval(var_dict)
         if val >= 0: return 1
@@ -388,6 +524,3 @@ def integrate(lower_bound: float, upper_bound: float, expr: Expr, var: Var, step
         result += (expr.eval(curr_point, var) + expr.eval(curr_point + step_size, var)) * step_size / 2
         curr_point += step_size
     return result
-
-"""
-"""
