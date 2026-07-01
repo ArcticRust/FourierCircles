@@ -1,0 +1,11 @@
+things to do:
+
+on the function side:
+improve how Multiply algorithm multiplies constants out
+properly work out multivariable integration + fourier (probably need to optimize integration algorithm more beforehand)
+Fast Fourier Transform? Hopefully?
+
+other stuff:
+add multivariable graphing !!!!! this might be a pain
+probably need to add testing at some point
+fix sleep schedule

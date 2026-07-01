@@ -36,21 +36,59 @@ class Multiply(Expr):
 
     def simplify(self):
         i = 0
+        const_num = 0
+        divided_terms = []
+        init_len = len(self.sub_nodes)
         while i < len(self.sub_nodes):
-            self.sub_nodes[i] = self.sub_nodes[i].simplify()
+            if i < init_len: # prevent multiple simplifications 
+                self.sub_nodes[i] = self.sub_nodes[i].simplify()
+
+            if isinstance(self.sub_nodes[i], Multiply):
+                for multiply_subnode in self.sub_nodes[i].sub_nodes:
+                    self.sub_nodes.append(multiply_subnode)
+                self.sub_nodes.pop(i)
+                i -= 1
+
             if isinstance(self.sub_nodes[i], Const):
+                const_num += 1
                 if self.sub_nodes[i].value == 0:
                     return Const(0)
                 if self.sub_nodes[i].value == 1:
                     self.sub_nodes.pop(i)
-                    i -= 1
                     if len(self.sub_nodes) == 0:
                         return Const(1)
+                    const_num -= 1
+                    init_len -= 1 # const removal does not impact simplifications
+                    i -= 1
+
+            if isinstance(self.sub_nodes[i], Divide):
+                divided_terms.append(self.sub_nodes[i].sub_nodes[1])
+                self.sub_nodes.append(self.sub_nodes[i].sub_nodes[0])
+                self.sub_nodes.pop(i)
+                i -= 1
+
             i += 1
+
+        if const_num > 1:
+            i = 0
+            total = 1
+            while i < len(self.sub_nodes):
+                if isinstance(self.sub_nodes[i], Const):
+                    total *= self.sub_nodes.pop(i).value
+                    i -= 1
+                i += 1
+            return Multiply(Const(total), *self.sub_nodes).simplify() # probably should be reworked
+
+        # comparison shenanigans to reduce number of .simplify() calls and make strings cleaner
         if len(self.sub_nodes) == 1:
-            return self.sub_nodes[0]
+            if len(divided_terms) == 0: return self.sub_nodes[0]
+            if len(divided_terms) == 1: return Divide(self.sub_nodes[0], divided_terms[0])
+            return Divide(self.sub_nodes[0], Multiply(*divided_terms))
         
-        return Multiply(*self.sub_nodes)
+        if len(divided_terms) == 0: return Multiply(*self.sub_nodes)
+        if len(divided_terms) == 1: return Divide(Multiply(*self.sub_nodes), divided_terms[0])
+        return Divide(Multiply(*self.sub_nodes), Multiply(*divided_terms))
+        
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -141,8 +179,13 @@ class Subtract(Binary):
         self.sub_nodes[0] = self.sub_nodes[0].simplify()
         self.sub_nodes[1] = self.sub_nodes[1].simplify()
         if isinstance(self.sub_nodes[1], Const):
+            if isinstance(self.sub_nodes[0], Const):
+                return Const(self.sub_nodes[0].value - self.sub_nodes[1].value)
             if self.sub_nodes[1].value == 0:
                 return self.sub_nodes[0]
+        if isinstance(self.sub_nodes[0], Const):
+            if self.sub_nodes[0].value == 0:
+                return Multiply(Const(-1), self.sub_nodes[1])
         return Subtract(self.sub_nodes[0], self.sub_nodes[1])
 
     def __str__(self):
@@ -415,8 +458,8 @@ class Var(Unary):
 
     def eval(self, var_dict: dict[Var, float]):
         if self not in var_dict:
-            raise ValUndefinedError("Variable not provided in dictionary")
-        return var_dict.get(self)
+            raise ValUndefinedError("The value of " + self.var_name + " is not provided in the dictionary")
+        return var_dict[self]
     
     def diff(self, var: Var):
         if var.var_name == self.var_name:
